@@ -12,25 +12,30 @@ class MDNSDiscovery: ObservableObject {
     @Published var isSearching = false
     @Published var lastError: Error?
     @Published var debugState: String = "idle"
+    private var retryCount = 0
+    private let maxRetries = 3
 
     /// Start browsing for Serviceberry servers
     func startBrowsing() {
+        retryCount = 0
+        startBrowsingInternal()
+    }
+
+    private func startBrowsingInternal() {
         stopBrowsing()
         discoveredServers = []
         isSearching = true
         debugState = "starting"
 
-        // Use "local." domain with trailing dot (standard DNS format)
+        // Use nil domain to search all local domains
         let descriptor = NWBrowser.Descriptor.bonjour(
             type: Constants.bonjourServiceType,
-            domain: Constants.bonjourDomain
+            domain: nil
         )
 
-        // Configure parameters for local network discovery
+        // Use default parameters for mDNS browsing
         let parameters = NWParameters()
-        parameters.allowLocalEndpointReuse = true
-        parameters.acceptLocalOnly = true
-        parameters.allowFastOpen = true
+        parameters.includePeerToPeer = true
 
         print("[mDNS] Creating browser for type: \(Constants.bonjourServiceType)")
         browser = NWBrowser(for: descriptor, using: parameters)
@@ -48,6 +53,16 @@ class MDNSDiscovery: ObservableObject {
                     self.debugState = "failed: \(error.localizedDescription)"
                     self.lastError = error
                     self.isSearching = false
+                    // Auto-retry after 2 seconds on failure (up to maxRetries)
+                    if self.retryCount < self.maxRetries {
+                        self.retryCount += 1
+                        self.debugState = "retrying (\(self.retryCount)/\(self.maxRetries))..."
+                        Task {
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            print("[mDNS] Auto-retrying (\(self.retryCount)/\(self.maxRetries))...")
+                            self.startBrowsingInternal()
+                        }
+                    }
                 case .cancelled:
                     print("[mDNS] Browser cancelled")
                     self.debugState = "cancelled"
