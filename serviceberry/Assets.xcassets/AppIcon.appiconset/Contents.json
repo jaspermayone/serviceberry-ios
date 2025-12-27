@@ -2,30 +2,114 @@
   "images" : [
     {
       "idiom" : "universal",
+      "filename" : "ios_20pt@2x.png",
+      "scale" : "2x",
       "platform" : "ios",
-      "size" : "1024x1024"
+      "size" : "20x20"
     },
     {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
       "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
+      "size" : "20x20",
+      "scale" : "3x",
+      "filename" : "ios_20pt@3x.png",
+      "platform" : "ios"
     },
     {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "tinted"
-        }
-      ],
+      "size" : "29x29",
+      "idiom" : "universal",
+      "filename" : "ios_29pt@2x.png",
+      "scale" : "2x",
+      "platform" : "ios"
+    },
+    {
+      "filename" : "ios_29pt@3x.png",
       "idiom" : "universal",
       "platform" : "ios",
-      "size" : "1024x1024"
+      "size" : "29x29",
+      "scale" : "3x"
+    },
+    {
+      "idiom" : "universal",
+      "size" : "38x38",
+      "platform" : "ios",
+      "filename" : "ios_38pt@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "38x38",
+      "idiom" : "universal",
+      "scale" : "3x",
+      "filename" : "ios_38pt@3x.png",
+      "platform" : "ios"
+    },
+    {
+      "scale" : "2x",
+      "size" : "40x40",
+      "idiom" : "universal",
+      "filename" : "ios_40pt@2x.png",
+      "platform" : "ios"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "ios_40pt@3x.png",
+      "size" : "40x40",
+      "platform" : "ios",
+      "scale" : "3x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x",
+      "platform" : "ios",
+      "size" : "60x60",
+      "filename" : "ios_60pt@2x.png"
+    },
+    {
+      "platform" : "ios",
+      "scale" : "3x",
+      "idiom" : "universal",
+      "filename" : "ios_60pt@3x.png",
+      "size" : "60x60"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "ios_64pt@2x.png",
+      "platform" : "ios",
+      "size" : "64x64",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "size" : "64x64",
+      "scale" : "3x",
+      "filename" : "ios_64pt@3x.png",
+      "platform" : "ios"
+    },
+    {
+      "scale" : "2x",
+      "idiom" : "universal",
+      "filename" : "ios_68pt@2x.png",
+      "size" : "68x68",
+      "platform" : "ios"
+    },
+    {
+      "filename" : "ios_76pt@2x.png",
+      "size" : "76x76",
+      "idiom" : "universal",
+      "scale" : "2x",
+      "platform" : "ios"
+    },
+    {
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "83.5x83.5",
+      "scale" : "2x",
+      "filename" : "ios_83.5pt@2x.png"
+    },
+    {
+      "filename" : "ios_1024pt@1x.png",
+      "idiom" : "universal",
+      "size" : "1024x1024",
+      "platform" : "ios"
     }
   ],
   "info" : {

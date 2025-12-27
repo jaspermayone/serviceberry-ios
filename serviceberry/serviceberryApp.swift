@@ -9,9 +9,18 @@ import SwiftUI
 
 @main
 struct serviceberryApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var appState = AppState()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if appState.isOnboarded {
+                DashboardView()
+                    .environmentObject(appState)
+            } else {
+                OnboardingContainerView()
+                    .environmentObject(appState)
+            }
         }
     }
 }
