@@ -9,7 +9,7 @@ enum Constants {
 
     // MARK: - mDNS
     static let bonjourServiceType = "_serviceberry._tcp"
-    static let bonjourDomain = "local."
+    static let bonjourDomain = "local."  // trailing dot is standard DNS format
 
     // MARK: - Server
     static let serverPort: UInt16 = 8080

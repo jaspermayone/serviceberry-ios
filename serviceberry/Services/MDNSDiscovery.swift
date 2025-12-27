@@ -11,21 +11,28 @@ class MDNSDiscovery: ObservableObject {
     @Published var discoveredServers: [ServerInfo] = []
     @Published var isSearching = false
     @Published var lastError: Error?
+    @Published var debugState: String = "idle"
 
     /// Start browsing for Serviceberry servers
     func startBrowsing() {
         stopBrowsing()
         discoveredServers = []
         isSearching = true
+        debugState = "starting"
 
+        // Use "local." domain with trailing dot (standard DNS format)
         let descriptor = NWBrowser.Descriptor.bonjour(
             type: Constants.bonjourServiceType,
             domain: Constants.bonjourDomain
         )
 
+        // Configure parameters for local network discovery
         let parameters = NWParameters()
-        parameters.includePeerToPeer = true
+        parameters.allowLocalEndpointReuse = true
+        parameters.acceptLocalOnly = true
+        parameters.allowFastOpen = true
 
+        print("[mDNS] Creating browser for type: \(Constants.bonjourServiceType)")
         browser = NWBrowser(for: descriptor, using: parameters)
 
         browser?.stateUpdateHandler = { [weak self] state in
@@ -33,14 +40,27 @@ class MDNSDiscovery: ObservableObject {
                 guard let self else { return }
                 switch state {
                 case .ready:
-                    break
+                    print("[mDNS] ✅ Browser ready, searching for \(Constants.bonjourServiceType)")
+                    self.debugState = "ready"
                 case .failed(let error):
+                    print("[mDNS] ❌ Browser failed: \(error)")
+                    print("[mDNS] ❌ Error code: \(error.debugDescription)")
+                    self.debugState = "failed: \(error.localizedDescription)"
                     self.lastError = error
                     self.isSearching = false
                 case .cancelled:
+                    print("[mDNS] Browser cancelled")
+                    self.debugState = "cancelled"
                     self.isSearching = false
-                default:
-                    break
+                case .waiting(let error):
+                    print("[mDNS] ⏳ Browser waiting: \(error)")
+                    self.debugState = "waiting: \(error.localizedDescription)"
+                case .setup:
+                    print("[mDNS] Browser setup...")
+                    self.debugState = "setup"
+                @unknown default:
+                    print("[mDNS] Browser unknown state: \(state)")
+                    self.debugState = "unknown"
                 }
             }
         }
@@ -48,6 +68,7 @@ class MDNSDiscovery: ObservableObject {
         browser?.browseResultsChangedHandler = { [weak self] results, _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                print("[mDNS] Found \(results.count) service(s)")
                 self.processBrowseResults(results)
             }
         }
@@ -64,11 +85,13 @@ class MDNSDiscovery: ObservableObject {
         }
         connections = []
         isSearching = false
+        debugState = "stopped"
     }
 
     private func processBrowseResults(_ results: Set<NWBrowser.Result>) {
         for result in results {
             guard case .service(let name, let type, let domain, _) = result.endpoint else { continue }
+            print("[mDNS] Service: '\(name)' type: '\(type)' domain: '\(domain)'")
 
             // Extract TXT records from metadata
             var version = "unknown"
@@ -159,11 +182,19 @@ class MDNSDiscovery: ObservableObject {
                 // Use the resolved hostname (e.g., "turtle.local")
                 host = hostname
             case .ipv4(let addr):
-                // Use IPv4 address
-                host = "\(addr)"
+                // Use IPv4 address, strip any interface suffix (e.g., %en0)
+                var ipStr = "\(addr)"
+                if let percentIndex = ipStr.firstIndex(of: "%") {
+                    ipStr = String(ipStr[..<percentIndex])
+                }
+                host = ipStr
             case .ipv6(let addr):
-                // Use IPv6 address
-                host = "[\(addr)]"
+                // Use IPv6 address, strip any interface suffix
+                var ipStr = "\(addr)"
+                if let percentIndex = ipStr.firstIndex(of: "%") {
+                    ipStr = String(ipStr[..<percentIndex])
+                }
+                host = "[\(ipStr)]"
             @unknown default:
                 break
             }
@@ -172,7 +203,12 @@ class MDNSDiscovery: ObservableObject {
             break
         }
 
-        guard !host.isEmpty else { return }
+        guard !host.isEmpty else {
+            print("[mDNS] Failed to resolve host for '\(serviceName)'")
+            return
+        }
+
+        print("[mDNS] Resolved '\(serviceName)' -> \(host):\(port)")
 
         let serverInfo = ServerInfo(
             name: serviceName,

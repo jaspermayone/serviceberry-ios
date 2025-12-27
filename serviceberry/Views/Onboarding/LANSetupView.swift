@@ -10,6 +10,7 @@ struct LANSetupView: View {
     @State private var showManualEntry = false
     @State private var manualHost = ""
     @State private var manualFingerprint = ""
+    @State private var showDebugInfo = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -62,6 +63,36 @@ struct LANSetupView: View {
                             showManualEntry = true
                         }
                         .buttonStyle(.bordered)
+
+                        Button(showDebugInfo ? "Hide Debug" : "Show Debug") {
+                            showDebugInfo.toggle()
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
+                    }
+
+                    if showDebugInfo {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Debug Info")
+                                .font(.caption.bold())
+                            Text("Service type: \(Constants.bonjourServiceType)")
+                                .font(.caption2)
+                            Text("Browser state: \(discovery.debugState)")
+                                .font(.caption2)
+                            Text("Searching: \(discovery.isSearching ? "Yes" : "No")")
+                                .font(.caption2)
+                            Text("Servers found: \(discovery.discoveredServers.count)")
+                                .font(.caption2)
+                            if let error = discovery.lastError {
+                                Text("Error: \(error.localizedDescription)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
                     }
                 }
 
