@@ -26,6 +26,8 @@ class TransportManager: ObservableObject {
         self.mode = mode
         self.serverInfo = serverInfo
 
+        LogManager.shared.info("Configuring transport: \(mode.displayName)", source: "Transport")
+
         switch mode {
         case .bluetooth:
             let ble = BLETransport()
@@ -34,9 +36,11 @@ class TransportManager: ObservableObject {
 
         case .lan:
             guard let info = serverInfo else {
+                LogManager.shared.error("No server info provided", source: "Transport")
                 connectionState = .error("No server info provided")
                 return
             }
+            LogManager.shared.debug("Server: \(info.host):\(info.port)", source: "Transport")
             let lan = LANTransport(serverInfo: info)
             setupTransport(lan)
             transport = lan
@@ -74,12 +78,14 @@ class TransportManager: ObservableObject {
 
     /// Handle incoming location request from server
     private func handleLocationRequest() async {
+        LogManager.shared.info("Location request received from server", source: "Transport")
         do {
             let position = try await locationService.requestLocation()
+            LogManager.shared.debug("Got position: \(position.latitude), \(position.longitude)", source: "Transport")
             let payload = LocationPayload(position: position)
             try await sendLocation(payload)
         } catch {
-            print("Failed to handle location request: \(error.localizedDescription)")
+            LogManager.shared.error("Failed to handle location request: \(error.localizedDescription)", source: "Transport")
         }
     }
 
@@ -99,6 +105,7 @@ class TransportManager: ObservableObject {
         try await transport.sendLocation(payload)
         lastSubmissionTime = Date()
         submissionCount += 1
+        LogManager.shared.info("Location sent successfully (#\(submissionCount))", source: "Transport")
     }
 
     /// Get BLE transport for peripheral selection (only valid if mode is bluetooth)

@@ -35,6 +35,10 @@ class LANTransport: NSObject, ObservableObject, TransportProtocol {
             throw TransportError.connectionFailed("Invalid server URL")
         }
 
+        Task { @MainActor in
+            LogManager.shared.info("Connecting to \(serverInfo.host):\(serverInfo.port)", source: "LAN")
+        }
+
         do {
             let (_, response) = try await session.data(from: statusURL)
 
@@ -43,9 +47,15 @@ class LANTransport: NSObject, ObservableObject, TransportProtocol {
                 throw TransportError.connectionFailed("Server returned error")
             }
 
+            Task { @MainActor in
+                LogManager.shared.info("Connected successfully", source: "LAN")
+            }
             updateState(.connected)
             startPolling()
         } catch {
+            Task { @MainActor in
+                LogManager.shared.error("Connection failed: \(error.localizedDescription)", source: "LAN")
+            }
             updateState(.error(error.localizedDescription))
             throw error
         }
@@ -104,11 +114,16 @@ class LANTransport: NSObject, ObservableObject, TransportProtocol {
             // Check if server is requesting location
             if let responseText = String(data: data, encoding: .utf8),
                responseText.lowercased().contains("request") {
+                Task { @MainActor in
+                    LogManager.shared.debug("Server requested location", source: "LAN")
+                }
                 await onLocationRequest?()
             }
         } catch {
             // Polling error - don't disconnect, just log
-            print("Polling error: \(error.localizedDescription)")
+            Task { @MainActor in
+                LogManager.shared.warning("Poll error: \(error.localizedDescription)", source: "LAN")
+            }
         }
     }
 
@@ -155,9 +170,11 @@ extension LANTransport: URLSessionDelegate {
             let credential = URLCredential(trust: serverTrust)
             completionHandler(.useCredential, credential)
         } else {
-            print("Certificate mismatch!")
-            print("Expected: \(serverInfo.certFingerprint)")
-            print("Got: \(serverFingerprint)")
+            Task { @MainActor in
+                LogManager.shared.error("Certificate mismatch!", source: "LAN")
+                LogManager.shared.debug("Expected: \(serverInfo.certFingerprint)", source: "LAN")
+                LogManager.shared.debug("Got: \(serverFingerprint)", source: "LAN")
+            }
             completionHandler(.cancelAuthenticationChallenge, nil)
         }
     }

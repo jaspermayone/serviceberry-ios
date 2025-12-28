@@ -34,6 +34,7 @@ class BLETransport: NSObject, ObservableObject, TransportProtocol {
     func startScanning() {
         guard centralManager.state == .poweredOn else { return }
         discoveredPeripherals = []
+        LogManager.shared.info("Scanning for BLE peripherals", source: "BLE")
         centralManager.scanForPeripherals(
             withServices: [Constants.serviceUUID],
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
@@ -129,22 +130,26 @@ extension BLETransport: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
                         advertisementData: [String: Any], rssi RSSI: NSNumber) {
         if !discoveredPeripherals.contains(where: { $0.identifier == peripheral.identifier }) {
+            LogManager.shared.debug("Discovered: \(peripheral.name ?? "Unknown") (RSSI: \(RSSI))", source: "BLE")
             discoveredPeripherals.append(peripheral)
         }
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        LogManager.shared.info("Connected to \(peripheral.name ?? "Unknown")", source: "BLE")
         peripheral.delegate = self
         peripheral.discoverServices([Constants.serviceUUID])
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        LogManager.shared.error("Connection failed: \(error?.localizedDescription ?? "Unknown")", source: "BLE")
         updateState(.error(error?.localizedDescription ?? "Connection failed"))
         connectionContinuation?.resume(throwing: TransportError.connectionFailed(error?.localizedDescription ?? "Unknown error"))
         connectionContinuation = nil
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        LogManager.shared.warning("Disconnected from peripheral", source: "BLE")
         updateState(.disconnected)
         characteristic = nil
     }
@@ -219,7 +224,9 @@ extension BLETransport: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
         if let error = error {
-            print("Failed to subscribe to notifications: \(error.localizedDescription)")
+            LogManager.shared.error("Failed to subscribe to notifications: \(error.localizedDescription)", source: "BLE")
+        } else {
+            LogManager.shared.debug("Subscribed to notifications", source: "BLE")
         }
     }
 }

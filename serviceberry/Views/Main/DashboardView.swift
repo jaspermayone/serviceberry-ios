@@ -29,6 +29,11 @@ struct DashboardView: View {
             }
             .navigationTitle("Serviceberry")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { LogManager.shared.toggleOverlay() }) {
+                        Image(systemName: "doc.text")
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showSettings = true }) {
                         Image(systemName: "gear")
